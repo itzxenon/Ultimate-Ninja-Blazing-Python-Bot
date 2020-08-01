@@ -23,15 +23,15 @@ class API(object):
 		self.api_url='https://nrbna.channel.or.jp'
 		self.teams=None
 		self.platform=1#1 android 2 other
-		self.app_version='2.0.3'
+		self.app_version='2.25.0'
 		self.main_revision=0
 		self.assetbundle_revision=0
 		self.uuid=self.getRNDId().upper()
-		self.ad_id=self.getRNDId()
+		self.ad_id='00000000-0000-0000-0000-000000000000'
 		self.platform_user_id=self.getRNDPlatform()
 		self.player_id=0
 		self.ssid=None
-		self.app_auth_key='7SkWC2nhKPVdIgzLgC17zIVI2qx0vPhO'
+		self.app_auth_key='f7d3abaa17534f5ea68518beae1719b2'
 		self.region=2
 
 	def whoami(self): 
@@ -76,12 +76,8 @@ class API(object):
 
 	def callAPI(self,_data,path,repeat=False):
 		_head=self.makeHeaders(str(_data['request_id']) if not repeat else str(int(time.time())))
-		r=self.s.post(self.api_url+path,data=self.c.encode(json.dumps(_data)),headers=_head,stream=True)
-		_chunks=''
-		for chunk in r.iter_content(chunk_size=1024): 
-			if chunk:
-				_chunks=_chunks+chunk
-		_res= "".join([self.c.decode(_chunks).rsplit("}" , 1)[0] , "}"])
+		r=self.s.post(self.api_url+path,data=self.c.encode(json.dumps(_data,separators=(',', ':'))),headers=_head)
+		_res= "".join([self.c.decode(r.content).rsplit("}" , 1)[0] , "}"])
 		try:
 			_res_json=json.loads(_res)
 		except:
@@ -100,12 +96,16 @@ class API(object):
 		
 	def setPlayerId(self,id):
 		self.player_id=id['player_id']
+		self.log('player_id:%s'%(self.player_id))
 		
 	def setSsid(self,id):
 		self.ssid=id
-		
+
+	def setUUID(self,id):
+		self.uuid=id
+
 	def makeHeaders(self,a1):
-		return OrderedDict([('X-Uuid',self.uuid),('X-Ad-Id',self.ad_id),('X-Player-Id',str(self.player_id)),('X-Platform',str(self.platform)),('X-Language','en'),('X-App-Version',self.app_version),('X-Model','htc Nexus 9'),('X-Platform-Version','Android OS 7.0 / API-24 (NRD90R/3141966)'),('X-Currency','USD'),('X-Platform-User-Id',self.platform_user_id),('X-Request-Id',a1),('X-Sim','0'),('X-Unity-Version','5.3.4p6'),('X-Country','FR'),('X-App-Auth-Key',self.app_auth_key),('Content-Type','text/plain'),('X-Assetbundle-Revision',str(self.assetbundle_revision)),('X-Region',str(self.region)),('X-App-Package-Id',str(self.region)),('X-Timezone','CET 02:00:00'),('X-Main-Revision',str(self.main_revision)),('User-Agent','Dalvik/2.1.0 (Linux; U; Android 7.0; Nexus 9 Build/NRD90R)')])
+		return OrderedDict([('X-Uuid',self.uuid),('X-Ad-Id',self.ad_id),('X-Player-Id',str(self.player_id)),('X-Platform',str(self.platform)),('X-Language','en'),('X-App-Version',self.app_version),('X-Model','htc Nexus 9'),('X-Platform-Version','Android OS 7.0 / API-24 (NRD90R/3141966)'),('X-Currency','USD'),('X-Platform-User-Id',self.platform_user_id),('X-Request-Id',a1),('X-Sim','0'),('X-Unity-Version','5.3.4p6'),('X-Country','FR'),('X-App-Auth-Key',self.app_auth_key),('Content-Type','text/plain'),('X-Assetbundle-Revision',str(self.assetbundle_revision)),('X-Region',str(self.region)),('X-App-Package-Id',str(self.region)),('X-Timezone','+03 03:00:00'),('X-Main-Revision',str(self.main_revision)),('User-Agent','Dalvik/2.1.0 (Linux; U; Android 7.0; Nexus 9 Build/NRD90R)')])
 
 	def parseRevisions(self,data):
 		res=json.loads(data)
@@ -123,18 +123,22 @@ class API(object):
 		_base=self.buildBase()
 		_base['player_name']=username
 		return self.callAPI(_base,'/api/player/regist.json')
-		
+
 	def doAuth(self):
 		_base=self.buildBase()
 		return self.callAPI(_base,'/api/base/auth.json')
-	
+
+	def doDate(self):
+		_base=self.buildBase()
+		return self.callAPI(_base,'/api/base/date.json')
+
 	def getPlayer(self):
 		_base=self.buildBase()
 		tmp= self.callAPI(_base,'/api/base/player.json')
 		_res_json=json.loads(tmp)
 		self.log('public_id:%s username:%s'%(_res_json['public_id'],_res_json['player_name']))
 		return tmp
-	
+
 	def getMail(self):
 		_base=self.buildBase()
 		return self.callAPI(_base,'/api/base/mail.json')
@@ -213,7 +217,16 @@ class API(object):
 				self.teams[i]['member%s_chara_no'%(mem)]=id
 				break
 		self.doTeammission()
-		
+
+	def getGifts(self):
+		boxes=json.loads(self.getBoxList())['u_box']
+		tmp=[]
+		for i in boxes:
+			tmp.append(i)
+		if len(tmp)>=1:
+			self.log('found %s gifts'%(len(tmp)))
+			self.getBoxes(tmp)
+
 	def makeNewAccount(self):
 		self.doStartup()
 		self.doAuth()
@@ -230,16 +243,19 @@ class API(object):
 		print self.setTutorial(2)
 		#self.completeMission(100002,0,10023,1,1,0,2,50)
 		print self.setTutorial(3)
-		boxes=json.loads(self.getBoxList())['u_box']
-		tmp=[]
-		for i in boxes:
-			tmp.append(i)
-		self.getBoxes(tmp)
+		self.getGifts()
 		print self.setTutorial(4)
 		print self.setTutorial(5)
 		print self.setTutorial(6)
 		print self.setTutorial(7)
 		self.getTransferCode()
+		
+	def login(self):
+		self.doStartup()
+		self.doAuth()
+		self.getPlayer()
+		self.doDate()
+		self.getGifts()
 		
 if __name__ == "__main__":
 	a=API()

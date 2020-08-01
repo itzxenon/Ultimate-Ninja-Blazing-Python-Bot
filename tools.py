@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from Crypto.Cipher import AES
 import base64
 import binascii
@@ -11,7 +12,7 @@ class PKCS7Encoder(object):
 		nl = len(text)
 		val = int(binascii.hexlify(text[-1]), 16)
 		if val > self.k:
-			raise ValueError('Input is not padded or padding is corrupt')
+			return text
 		l = nl - val
 		return text[:l]
 
