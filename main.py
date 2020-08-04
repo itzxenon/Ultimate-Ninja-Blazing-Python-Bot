@@ -23,7 +23,7 @@ class API(object):
 		self.api_url='https://nrbna.channel.or.jp'
 		self.teams=None
 		self.platform=1#1 android 2 other
-		self.app_version='2.25.0'
+		self.app_version='2.26.0'
 		self.main_revision=0
 		self.assetbundle_revision=0
 		self.uuid=self.getRNDId().upper()
@@ -31,7 +31,7 @@ class API(object):
 		self.platform_user_id=self.getRNDPlatform()
 		self.player_id=0
 		self.ssid=None
-		self.app_auth_key='f7d3abaa17534f5ea68518beae1719b2'
+		self.app_auth_key='613a3643f9e247d78f857deaaf9a2853'
 		self.region=2
 
 	def whoami(self): 
