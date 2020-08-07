@@ -16,8 +16,6 @@ class API(object):
 	def __init__(self):
 		self.s=requests.session()
 		self.s.verify=False
-		if 'win' in sys.platform:
-			self.s.proxies.update({'http': 'http://127.0.0.1:8888','https': 'https://127.0.0.1:8888',})
 		self.debug=True
 		self.c=Crypter()
 		self.api_url='https://nrbna.channel.or.jp'
